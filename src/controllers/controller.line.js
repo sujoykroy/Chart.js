@@ -203,7 +203,7 @@ module.exports = DatasetController.extend({
 		var sumNeg = 0;
 		var i, ds, dsMeta;
 
-		if (yScale.options.stacked) {
+		if (yScale.options.stacked && chart.data.datasets[datasetIndex].stacked !== false) {
 			for (i = 0; i < datasetIndex; i++) {
 				ds = chart.data.datasets[i];
 				dsMeta = chart.getDatasetMeta(i);
