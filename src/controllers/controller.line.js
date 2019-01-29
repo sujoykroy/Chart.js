@@ -207,7 +207,7 @@ module.exports = DatasetController.extend({
 			for (i = 0; i < datasetIndex; i++) {
 				ds = chart.data.datasets[i];
 				dsMeta = chart.getDatasetMeta(i);
-				if (dsMeta.type === 'line' && dsMeta.yAxisID === yScale.id && chart.isDatasetVisible(i)) {
+				if (dsMeta.type === 'line' && dsMeta.yAxisID === yScale.id && chart.isDatasetVisible(i) && ds.stacked !== false) {
 					var stackedRightValue = Number(yScale.getRightValue(ds.data[index]));
 					if (stackedRightValue < 0) {
 						sumNeg += stackedRightValue || 0;
