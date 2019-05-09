@@ -11,7 +11,7 @@ var valueOrDefault = helpers.valueOrDefault;
  * Generate a set of logarithmic ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {Array<Number>} array of tick values
+ * @returns {number[]} array of tick values
  */
 function generateTicks(generationOptions, dataRange) {
 	var ticks = [];
@@ -61,6 +61,11 @@ var defaultConfig = {
 		callback: Ticks.formatters.logarithmic
 	}
 };
+
+// TODO(v3): change this to positiveOrDefault
+function nonNegativeOrDefault(value, defaultValue) {
+	return helpers.isFinite(value) && value >= 0 ? value : defaultValue;
+}
 
 module.exports = Scale.extend({
 	determineDataLimits: function() {
@@ -174,8 +179,8 @@ module.exports = Scale.extend({
 		var DEFAULT_MIN = 1;
 		var DEFAULT_MAX = 10;
 
-		me.min = valueOrDefault(tickOpts.min, me.min);
-		me.max = valueOrDefault(tickOpts.max, me.max);
+		me.min = nonNegativeOrDefault(tickOpts.min, me.min);
+		me.max = nonNegativeOrDefault(tickOpts.max, me.max);
 
 		if (me.min === me.max) {
 			if (me.min !== 0 && me.min !== null) {
@@ -211,8 +216,8 @@ module.exports = Scale.extend({
 		var reverse = !me.isHorizontal();
 
 		var generationOptions = {
-			min: tickOpts.min,
-			max: tickOpts.max
+			min: nonNegativeOrDefault(tickOpts.min),
+			max: nonNegativeOrDefault(tickOpts.max)
 		};
 		var ticks = me.ticks = generateTicks(generationOptions, me);
 
@@ -251,8 +256,8 @@ module.exports = Scale.extend({
 
 	/**
 	 * Returns the value of the first tick.
-	 * @param {Number} value - The minimum not zero value.
-	 * @return {Number} The first tick value.
+	 * @param {number} value - The minimum not zero value.
+	 * @return {number} The first tick value.
 	 * @private
 	 */
 	_getFirstTickValue: function(value) {
@@ -340,5 +345,5 @@ module.exports = Scale.extend({
 	}
 });
 
-// INTERNAL: static default options, registered in src/chart.js
+// INTERNAL: static default options, registered in src/index.js
 module.exports._defaults = defaultConfig;

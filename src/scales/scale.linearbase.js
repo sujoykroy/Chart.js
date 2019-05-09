@@ -10,7 +10,7 @@ var isNullOrUndef = helpers.isNullOrUndef;
  * Generate a set of linear ticks
  * @param generationOptions the options used to generate the ticks
  * @param dataRange the range of the data
- * @returns {Array<Number>} array of tick values
+ * @returns {number[]} array of tick values
  */
 function generateTicks(generationOptions, dataRange) {
 	var ticks = [];
@@ -44,7 +44,7 @@ function generateTicks(generationOptions, dataRange) {
 
 	if (stepSize || isNullOrUndef(precision)) {
 		// If a precision is not specified, calculate factor based on spacing
-		factor = Math.pow(10, helpers.decimalPlaces(spacing));
+		factor = Math.pow(10, helpers._decimalPlaces(spacing));
 	} else {
 		// If the user specified a precision, round to that number of decimal places
 		factor = Math.pow(10, precision);

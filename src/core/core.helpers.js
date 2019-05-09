@@ -5,65 +5,10 @@
 var color = require('chartjs-color');
 var defaults = require('./core.defaults');
 var helpers = require('../helpers/index');
-var scaleService = require('../core/core.scaleService');
 
 module.exports = function() {
 
 	// -- Basic js utility methods
-
-	helpers.configMerge = function(/* objects ... */) {
-		return helpers.merge(helpers.clone(arguments[0]), [].slice.call(arguments, 1), {
-			merger: function(key, target, source, options) {
-				var tval = target[key] || {};
-				var sval = source[key];
-
-				if (key === 'scales') {
-					// scale config merging is complex. Add our own function here for that
-					target[key] = helpers.scaleMerge(tval, sval);
-				} else if (key === 'scale') {
-					// used in polar area & radar charts since there is only one scale
-					target[key] = helpers.merge(tval, [scaleService.getScaleDefaults(sval.type), sval]);
-				} else {
-					helpers._merger(key, target, source, options);
-				}
-			}
-		});
-	};
-
-	helpers.scaleMerge = function(/* objects ... */) {
-		return helpers.merge(helpers.clone(arguments[0]), [].slice.call(arguments, 1), {
-			merger: function(key, target, source, options) {
-				if (key === 'xAxes' || key === 'yAxes') {
-					var slen = source[key].length;
-					var i, type, scale;
-
-					if (!target[key]) {
-						target[key] = [];
-					}
-
-					for (i = 0; i < slen; ++i) {
-						scale = source[key][i];
-						type = helpers.valueOrDefault(scale.type, key === 'xAxes' ? 'category' : 'linear');
-
-						if (i >= target[key].length) {
-							target[key].push({});
-						}
-
-						if (!target[key][i].type || (scale.type && scale.type !== target[key][i].type)) {
-							// new/untyped scale or type changed: let's apply the new defaults
-							// then merge source scale to correctly overwrite the defaults.
-							helpers.merge(target[key][i], [scaleService.getScaleDefaults(type), scale]);
-						} else {
-							// scales type are the same
-							helpers.merge(target[key][i], scale);
-						}
-					}
-				} else {
-					helpers._merger(key, target, source, options);
-				}
-			}
-		});
-	};
 
 	helpers.where = function(collection, filterCallback) {
 		if (helpers.isArray(collection) && Array.prototype.filter) {
@@ -126,7 +71,7 @@ module.exports = function() {
 	};
 	helpers.almostWhole = function(x, epsilon) {
 		var rounded = Math.round(x);
-		return (((rounded - epsilon) < x) && ((rounded + epsilon) > x));
+		return ((rounded - epsilon) <= x) && ((rounded + epsilon) >= x);
 	};
 	helpers.max = function(array) {
 		return array.reduce(function(max, value) {
@@ -178,10 +123,11 @@ module.exports = function() {
 	/**
 	 * Returns the number of decimal places
 	 * i.e. the number of digits after the decimal point, of the value of this Number.
-	 * @param {Number} x - A number.
-	 * @returns {Number} The number of decimal places.
+	 * @param {number} x - A number.
+	 * @returns {number} The number of decimal places.
+	 * @private
 	 */
-	helpers.decimalPlaces = function(x) {
+	helpers._decimalPlaces = function(x) {
 		if (!helpers.isFinite(x)) {
 			return;
 		}
@@ -228,9 +174,9 @@ module.exports = function() {
 	/**
 	 * Returns the aligned pixel value to avoid anti-aliasing blur
 	 * @param {Chart} chart - The chart instance.
-	 * @param {Number} pixel - A pixel value.
-	 * @param {Number} width - The width of the element.
-	 * @returns {Number} The aligned pixel value.
+	 * @param {number} pixel - A pixel value.
+	 * @param {number} width - The width of the element.
+	 * @returns {number} The aligned pixel value.
 	 * @private
 	 */
 	helpers._alignPixel = function(chart, pixel, width) {
@@ -485,11 +431,13 @@ module.exports = function() {
 		return value !== undefined && value !== null && value !== 'none';
 	}
 
-	// Private helper to get a constraint dimension
-	// @param domNode : the node to check the constraint on
-	// @param maxStyle : the style that defines the maximum for the direction we are using (maxWidth / maxHeight)
-	// @param percentageProperty : property of parent to use when calculating width as a percentage
-	// @see https://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser
+	/**
+	 * Returns the max width or height of the given DOM node in a cross-browser compatible fashion
+	 * @param {HTMLElement} domNode - the node to check the constraint on
+	 * @param {string} maxStyle - the style that defines the maximum for the direction we are using ('max-width' / 'max-height')
+	 * @param {string} percentageProperty - property of parent to use when calculating width as a percentage
+	 * @see {@link https://www.nathanaeljones.com/blog/2013/reading-max-width-cross-browser}
+	 */
 	function getConstraintDimension(domNode, maxStyle, percentageProperty) {
 		var view = document.defaultView;
 		var parentNode = helpers._getParentNode(domNode);

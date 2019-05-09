@@ -40,15 +40,15 @@ defaults._set('global', {
 			// Args are: (tooltipItems, data)
 			beforeTitle: helpers.noop,
 			title: function(tooltipItems, data) {
-				// Pick first xLabel for now
 				var title = '';
 				var labels = data.labels;
 				var labelCount = labels ? labels.length : 0;
 
 				if (tooltipItems.length > 0) {
 					var item = tooltipItems[0];
-
-					if (item.xLabel) {
+					if (item.label) {
+						title = item.label;
+					} else if (item.xLabel) {
 						title = item.xLabel;
 					} else if (labelCount > 0 && item.index < labelCount) {
 						title = labels[item.index];
@@ -70,7 +70,11 @@ defaults._set('global', {
 				if (label) {
 					label += ': ';
 				}
-				label += tooltipItem.yLabel;
+				if (!helpers.isNullOrUndef(tooltipItem.value)) {
+					label += tooltipItem.value;
+				} else {
+					label += tooltipItem.yLabel;
+				}
 				return label;
 			},
 			labelColor: function(tooltipItem, chart) {
@@ -103,7 +107,7 @@ var positioners = {
 	 * Average mode places the tooltip at the average position of the elements shown
 	 * @function Chart.Tooltip.positioners.average
 	 * @param elements {ChartElement[]} the elements being displayed in the tooltip
-	 * @returns {Point} tooltip position
+	 * @returns {object} tooltip position
 	 */
 	average: function(elements) {
 		if (!elements.length) {
@@ -135,8 +139,8 @@ var positioners = {
 	 * Gets the tooltip position nearest of the item nearest to the event position
 	 * @function Chart.Tooltip.positioners.nearest
 	 * @param elements {Chart.Element[]} the tooltip elements
-	 * @param eventPosition {Point} the position of the event in canvas coordinates
-	 * @returns {Point} the tooltip position
+	 * @param eventPosition {object} the position of the event in canvas coordinates
+	 * @returns {object} the tooltip position
 	 */
 	nearest: function(elements, eventPosition) {
 		var x = eventPosition.x;
@@ -186,8 +190,8 @@ function pushOrConcat(base, toPush) {
 
 /**
  * Returns array of strings split by newline
- * @param {String} value - The value to split by newline.
- * @returns {Array} value if newline present - Returned from String split() method
+ * @param {string} value - The value to split by newline.
+ * @returns {string[]} value if newline present - Returned from String split() method
  * @function
  */
 function splitNewlines(str) {
@@ -198,18 +202,25 @@ function splitNewlines(str) {
 }
 
 
-// Private helper to create a tooltip item model
-// @param element : the chart element (point, arc, bar) to create the tooltip item for
-// @return : new tooltip item
+/**
+ * Private helper to create a tooltip item model
+ * @param element - the chart element (point, arc, bar) to create the tooltip item for
+ * @return new tooltip item
+ */
 function createTooltipItem(element) {
 	var xScale = element._xScale;
 	var yScale = element._yScale || element._scale; // handle radar || polarArea charts
 	var index = element._index;
 	var datasetIndex = element._datasetIndex;
+	var controller = element._chart.getDatasetMeta(datasetIndex).controller;
+	var indexScale = controller._getIndexScale();
+	var valueScale = controller._getValueScale();
 
 	return {
 		xLabel: xScale ? xScale.getLabelForIndex(index, datasetIndex) : '',
 		yLabel: yScale ? yScale.getLabelForIndex(index, datasetIndex) : '',
+		label: indexScale ? '' + indexScale.getLabelForIndex(index, datasetIndex) : '',
+		value: valueScale ? '' + valueScale.getLabelForIndex(index, datasetIndex) : '',
 		index: index,
 		datasetIndex: datasetIndex,
 		x: element._model.x,
@@ -219,7 +230,7 @@ function createTooltipItem(element) {
 
 /**
  * Helper to get the reset model for the tooltip
- * @param tooltipOpts {Object} the tooltip options
+ * @param tooltipOpts {object} the tooltip options
  */
 function getBaseModel(tooltipOpts) {
 	var globalDefaults = defaults.global;
@@ -944,7 +955,7 @@ var exports = Element.extend({
 	 * Handle an event
 	 * @private
 	 * @param {IEvent} event - The event to handle
-	 * @returns {Boolean} true if the tooltip changed
+	 * @returns {boolean} true if the tooltip changed
 	 */
 	handleEvent: function(e) {
 		var me = this;

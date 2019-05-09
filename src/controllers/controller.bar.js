@@ -5,8 +5,6 @@ var defaults = require('../core/core.defaults');
 var elements = require('../elements/index');
 var helpers = require('../helpers/index');
 
-var resolve = helpers.options.resolve;
-
 defaults._set('bar', {
 	hover: {
 		mode: 'label'
@@ -120,6 +118,16 @@ module.exports = DatasetController.extend({
 
 	dataElementType: elements.Rectangle,
 
+	/**
+	 * @private
+	 */
+	_dataElementOptions: [
+		'backgroundColor',
+		'borderColor',
+		'borderSkipped',
+		'borderWidth'
+	],
+
 	initialize: function() {
 		var me = this;
 		var meta;
@@ -147,7 +155,7 @@ module.exports = DatasetController.extend({
 		var me = this;
 		var meta = me.getMeta();
 		var dataset = me.getDataset();
-		var options = me._resolveElementOptions(rectangle, index);
+		var options = me._resolveDataElementOptions(rectangle, index);
 
 		rectangle._xScale = me.getScaleForId(meta.xAxisID);
 		rectangle._yScale = me.getScaleForId(meta.yAxisID);
@@ -190,8 +198,8 @@ module.exports = DatasetController.extend({
 
 	/**
 	 * Returns the stacks based on groups and bar visibility.
-	 * @param {Number} [last] - The dataset index
-	 * @returns {Array} The stack list
+	 * @param {number} [last] - The dataset index
+	 * @returns {string[]} The list of stack IDs
 	 * @private
 	 */
 	_getStacks: function(last) {
@@ -226,9 +234,9 @@ module.exports = DatasetController.extend({
 
 	/**
 	 * Returns the stack index for the given dataset based on groups and bar visibility.
-	 * @param {Number} [datasetIndex] - The dataset index
-	 * @param {String} [name] - The stack name to find
-	 * @returns {Number} The stack index
+	 * @param {number} [datasetIndex] - The dataset index
+	 * @param {string} [name] - The stack name to find
+	 * @returns {number} The stack index
 	 * @private
 	 */
 	getStackIndex: function(datasetIndex, name) {
@@ -372,45 +380,5 @@ module.exports = DatasetController.extend({
 		}
 
 		helpers.canvas.unclipArea(chart.ctx);
-	},
-
-	/**
-	 * @private
-	 */
-	_resolveElementOptions: function(rectangle, index) {
-		var me = this;
-		var chart = me.chart;
-		var datasets = chart.data.datasets;
-		var dataset = datasets[me.index];
-		var custom = rectangle.custom || {};
-		var options = chart.options.elements.rectangle;
-		var values = {};
-		var i, ilen, key;
-
-		// Scriptable options
-		var context = {
-			chart: chart,
-			dataIndex: index,
-			dataset: dataset,
-			datasetIndex: me.index
-		};
-
-		var keys = [
-			'backgroundColor',
-			'borderColor',
-			'borderSkipped',
-			'borderWidth'
-		];
-
-		for (i = 0, ilen = keys.length; i < ilen; ++i) {
-			key = keys[i];
-			values[key] = resolve([
-				custom[key],
-				dataset[key],
-				options[key]
-			], context, index);
-		}
-
-		return values;
 	}
 });
